@@ -67,9 +67,9 @@ parser.add_argument("--pgzip-threads", type=int, default=2,
 parser.add_argument("--queue-size", type=int, default=1000,
                     help="Maximum lines buffered in each write queue (default: 1000). "
                          "Limits memory usage when compression is slower than processing.")
-parser.add_argument("--numpy-threads", type=_positive_int, default=1,
-                    help="Number of threads for numpy to use (default: 1). Controls OMP_NUM_THREADS, "
-                         "OPENBLAS_NUM_THREADS, MKL_NUM_THREADS etc.")
+parser.add_argument("--numpy-threads", type=_positive_int, default=0,
+                    help="Number of threads for numpy to use (default: 0 inherit thread counts from existing environment variables)."
+                         "Controls OMP_NUM_THREADS, OPENBLAS_NUM_THREADS, MKL_NUM_THREADS etc.")
 
 args = parser.parse_args()
 
