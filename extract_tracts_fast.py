@@ -9,7 +9,25 @@
 # - Selectable output compression: gzip (default), pgzip (parallel gzip), or plain text
 # - Bounded write queues to prevent unbounded memory growth when compression is slow
 
+import os
 import argparse
+
+# Pre-parse --numpy-threads before importing numpy, so env vars take effect
+def _positive_int(value):
+    ivalue = int(value)
+    if ivalue < 1:
+        raise argparse.ArgumentTypeError(f"--numpy-threads must be a positive integer, got {value}")
+    return ivalue
+
+_pre_parser = argparse.ArgumentParser(add_help=False)
+_pre_parser.add_argument("--numpy-threads", type=_positive_int, default=1)
+_pre_args, _ = _pre_parser.parse_known_args()
+os.environ["OMP_NUM_THREADS"] = str(_pre_args.numpy_threads)
+os.environ["OPENBLAS_NUM_THREADS"] = str(_pre_args.numpy_threads)
+os.environ["MKL_NUM_THREADS"] = str(_pre_args.numpy_threads)
+os.environ["VECLIB_MAXIMUM_THREADS"] = str(_pre_args.numpy_threads)
+os.environ["NUMEXPR_NUM_THREADS"] = str(_pre_args.numpy_threads)
+
 import gzip
 import logging
 import numpy as np
@@ -42,6 +60,9 @@ parser.add_argument("--pgzip-threads", type=int, default=2,
 parser.add_argument("--queue-size", type=int, default=1000,
                     help="Maximum lines buffered in each write queue (default: 1000). "
                          "Limits memory usage when compression is slower than processing.")
+parser.add_argument("--numpy-threads", type=_positive_int, default=1,
+                    help="Number of threads for numpy to use (default: 1). Controls OMP_NUM_THREADS, "
+                         "OPENBLAS_NUM_THREADS, MKL_NUM_THREADS etc.")
 
 args = parser.parse_args()
 
@@ -50,6 +71,7 @@ logger.info("Input MSP file: %s", args.msp)
 logger.info("Number of ancestries: %d", args.num_ancs)
 logger.info("Output prefix: %s", args.out_pre)
 logger.info("Compression mode: %s", args.compress)
+logger.info("Numpy threads: %d", args.numpy_threads)
 
 # Set up compression backend
 if args.compress == "pgzip":
