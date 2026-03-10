@@ -20,14 +20,21 @@ def _positive_int(value):
     return ivalue
 
 _pre_parser = argparse.ArgumentParser(add_help=False)
-_pre_parser.add_argument("--numpy-threads", type=_positive_int, default=1)
+_pre_parser.add_argument("--numpy-threads", type=_positive_int)
 _pre_args, _ = _pre_parser.parse_known_args()
-os.environ["OMP_NUM_THREADS"] = str(_pre_args.numpy_threads)
-os.environ["OPENBLAS_NUM_THREADS"] = str(_pre_args.numpy_threads)
-os.environ["MKL_NUM_THREADS"] = str(_pre_args.numpy_threads)
-os.environ["VECLIB_MAXIMUM_THREADS"] = str(_pre_args.numpy_threads)
-os.environ["NUMEXPR_NUM_THREADS"] = str(_pre_args.numpy_threads)
 
+# Only set threading-related env vars if --numpy-threads is explicitly provided,
+# and do not overwrite values that are already present in the environment.
+if _pre_args.numpy_threads is not None:
+    for _var in (
+        "OMP_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+    ):
+        if _var not in os.environ:
+            os.environ[_var] = str(_pre_args.numpy_threads)
 import gzip
 import logging
 import numpy as np
